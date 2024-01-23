@@ -49,8 +49,26 @@ Python.  If we wanted nicer graphics, we could use the
 PyQt graphics package.  The code for FiveTwelve is
 organized in a way that would allow us to replace the
 'view' (graphics interaction) component without changing the 'model'
-(game logic) component at all.  (In Winter 2024 I added a
-very basic textual interface as an alternative 'view' component.)
+(game logic) component at all.  
+
+In Winter 2024 I added a
+very basic textual interface as an alternative 'view' component.
+If you change these lines in `game_manager.py` 
+
+```python
+import tk_view as view
+# import text_view as view
+```
+
+to 
+
+```python
+# import tk_view as view
+import text_view as view
+```
+the application will use a textual interface on the console rather
+than the graphical interface.  The logic of the application in `model.py`
+does not require any change at all. 
 
 How do we do this?  We use a pattern called Model-View-Controller,
 in which "listeners" can be dynamically attached to the "model".

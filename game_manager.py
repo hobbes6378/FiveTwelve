@@ -4,8 +4,8 @@ model and view and implements controller
 functionality by interpreting keyboard input
 """
 import model
-# import tk_view as view
-import text_view as view
+import tk_view as view
+# import text_view as view
 import commands
 import sys
 
