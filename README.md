@@ -82,10 +82,18 @@ The *controller* part of the Model-View-Controller organization is currently com
 
 The current view component uses Zelle's graphics module (graphics/graphics.py), which in turn uses the TkInter graphics module that is included in Python distributions.  Keypress.py also depends on graphics.py, and thereby on TkInter.  A version of FiveTwelve that uses PyQt, PyGame, or another graphics/GUI layer will require an implementation of modules providing the same API as view.py and keypress.py.  It should be possible to make minimal changes to game_controller.py (just importing the different view modules) and no changes at all to model.py.
 
-Most changes to game logic in model.py should also be possible without changing view.py. For example, adopting the 2048 rule regarding merging (only one merge per tile per move) should require no change to view.py.  Adopting the 2048 rule regarding ineffective moves would require small changes to model.py and controller.py but no change to view.py or keypress.py.  This independence is the point of MVC organization.
+As of January 2024,  view.py has become tk_view.py to indicate that it is the user interface that uses tk.
+A new view component, text_view.py, has been added.  The textual view is intended to be compatible with screen readers
+like JAWS. It is very simple, but demonstrates that the intended independence
+of model and view has in fact been achieved.  Some reorganization of the view components and the game manager were required,
+but no change at all to the model component. 
+
+Most changes to game logic in model.py should also be possible without changing view.py. For example, adopting the 2048 rule regarding merging (only one merge per tile per move) should require no change to view.py.  Adopting the 2048 rule regarding ineffective moves would require small changes to model.py and controller.py but no change to tk_view.py or text_view.py.  
+
+This independence is the point of MVC organization.
 
 ## What students must program
 
 Although there is a lot of code to add to the skeleton, a fair amount of it is given to
 you in [the HOWTO document](doc/HOWTO.md).  The main thing you have to design
-on your own are the loops that move each tile in turn, in the correct order.
+on your own are the loops that move each tile in turn, in the correct order. 
