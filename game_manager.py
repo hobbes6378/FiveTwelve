@@ -4,8 +4,9 @@ model and view and implements controller
 functionality by interpreting keyboard input
 """
 import model
-import view
-import keypress
+# import tk_view as view
+import text_view as view
+import commands
 import sys
 
 
@@ -14,10 +15,10 @@ def main():
     grid = model.Board()
     # Set up view component
     game_view = view.GameView(600, 600)
-    grid_view = view.GridView(game_view, len(grid.tiles))
+    grid_view = view.GridView(game_view, grid)
     grid.add_listener(grid_view)
     # Handle control component responsibility here
-    commands = keypress.Command(game_view)
+    user_commands = view.Command(game_view)
 
     # FIXME: We will change this to 
     #  grid.place_tile(value=2) after
@@ -28,21 +29,22 @@ def main():
     # space for a tile
     while grid.has_empty():
         grid.place_tile()
-        cmd = commands.next()
-        if cmd == keypress.LEFT:
+        grid_view.refresh()
+        cmd = user_commands.next()
+        if cmd == commands.LEFT:
             grid.left()
-        elif cmd == keypress.RIGHT:
+        elif cmd == commands.RIGHT:
             grid.right()
-        elif cmd == keypress.UP:
+        elif cmd == commands.UP:
             grid.up()
-        elif cmd == keypress.DOWN:
+        elif cmd == commands.DOWN:
             grid.down()
-        elif cmd == keypress.CLOSE:
-            # Ended game by closing window
+        elif cmd == commands.CLOSE:
+            game_view.close()  # OK if it's already closed
             print(f"Your score: {grid.score()}")
             sys.exit(0)
         else: 
-            assert cmd == keypress.UNMAPPED
+            assert cmd == commands.UNMAPPED
 
     game_view.lose(grid.score())
 

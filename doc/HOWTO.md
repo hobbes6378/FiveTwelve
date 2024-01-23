@@ -31,11 +31,12 @@ then going back to revise several parts of the code ... in fact I wrote
 those instructions, but then decided it would be clearer and less
 frustrating to pretend I had seen the optimization earlier.
 
+
 ## Skeleton
 
 A skeleton is of model.py is provided for you.  This skeleton
 is a set of "stubs" for the things needed by the game
-manager and view.
+manager and view. 
 
 ### Model-View-Controller
 
@@ -48,7 +49,8 @@ Python.  If we wanted nicer graphics, we could use the
 PyQt graphics package.  The code for FiveTwelve is
 organized in a way that would allow us to replace the
 'view' (graphics interaction) component without changing the 'model'
-(game logic) component at all.
+(game logic) component at all.  (In Winter 2024 I added a
+very basic textual interface as an alternative 'view' component.)
 
 How do we do this?  We use a pattern called Model-View-Controller,
 in which "listeners" can be dynamically attached to the "model".
@@ -68,7 +70,7 @@ We will have two kinds of game elements, the
 
 ![A `Board` contains `Tile` objects. `Board` and `Tile`
 instantiate the `GameElement` abstract base class.
-](img/GameElement-instantiate.svg)
+](img/GameElement-instantiate.svg "Class diagram shows hierarchy of classes in this project")
 
 ### The Board Class
 
@@ -89,7 +91,7 @@ class Board(GameElement):
 We imported GameEvent as well as GameElement because
 we will "notify" listener objects when an interesting
 game event occurs.  The listener objects (defined
-in `view.py`) will be responsible
+in `tk_view.py` or `text_view.py`) will be responsible
 for updating the display.
 
 The ```__init__``` method of ```GameElement``` performs
@@ -114,12 +116,12 @@ cut at the constructor (the ```__init__``` method) is
 ```python
     def __init__(self):
         super().__init__()
-        self.tiles = [ None ]  # FIXME: a grid holds a matrix of tiles
+        self.tiles = [ [ ] ]  # FIXME: a grid holds a matrix of tiles
 ```
 
-If you are using PyCharm, you may notice that PyCharm uses a
-special color for the FIXME comment.  TODO comments
-are also highlighted.
+You may notice that VS Code and PyCharm use
+a special color for the FIXME comment.  TODO comments
+are also highlighted.  
 
 We need a few more pieces to get started.  The game manager
 needs a way to determine whether there is at least one
@@ -128,7 +130,7 @@ method for placing a tile on a randomly chosen
 empty space.  If there is not, it will stop the game and
 needs a way to calculate the score.  For now
 we will create *stub* methods that don't do anything
-useful.  We mark thise with ```# FIXME``` since they
+useful.  We mark these with ```# FIXME``` since they
 are code we will need to complete soon.
 
 ```python
@@ -178,10 +180,25 @@ the game manager can run, but the game is not
 much fun.
 
 ```bash
-\$ python3 game_manager.py
+$ python3 game_manager.py
 ```
 
-![Dumb game](img/stupidest.png)
+![Just displays "game over"](img/stupidest.png
+  "Stupidest game")
+
+If we change the `game_manager` component to use the
+textual view, like this: 
+
+```python
+# import tk_view as view
+import text_view as view
+```
+the result is similar but less colorful: 
+
+```shell
+$ python3 game_manager.py 
+Game over
+```
 
 ### Rows and Columns: The Vec class
 
@@ -305,6 +322,7 @@ something like this:
         self.value = value
 ```
 
+
 Will this be enough?  We know there will be some game logic about
 tiles bumping into each other and either stopping or merging.  Should
 this logic be in the ```Board``` class or the ```Tile``` class?  If the
@@ -328,7 +346,7 @@ represent the rows and columns.  Occupied positions should obviously
 be represented by ```Tile``` objects.  What about unoccupied positons?
 We could create a special *empty* tile (maybe giving it the value 0)
 or we could use the Python value ```None```.  It isn't obvious which
-approach is better, so we'll tentative choose to use the ```None``` value
+approach is better, so we'll tentatively choose to use the ```None``` value
 for unoccupied positions.
 
 We will need to place a couple tiles on the initial board.  Should we do
@@ -389,7 +407,8 @@ This is a little more complicated ... we'd better write a test case to make sure
 we got it right.
 
 We'll add a couple of simple test cases to make sure the loops in the constructor
-are working as intended:
+are working as intended.  First we should add
+`from model import Board` near the beginning, then 
 
 ```python
 class TestBoardConstructor(unittest.TestCase):
@@ -463,7 +482,7 @@ requires making a random selection from that collection.  So, let's build a
 method that returns the list of open positions.  Something like:
 
 ```python
-    def _empty_positions(self) -> List[Vec]:
+    def _empty_positions(self) -> list[Vec]:
         """Return a list of positions of None values,
         i.e., unoccupied spaces.
         """
@@ -535,7 +554,7 @@ as an indication that the method is not relevant to *users* of the class.
 You may have also noticed the specified return type of the method:
 
 ```python
-List[Vec]
+list[Vec]
 ```
 
 We could have written the method signature as
@@ -546,13 +565,7 @@ We could have written the method signature as
 
 but I have chosen to be more explicit about the kind of list that
 the method will return:  It will return a list of Vec objects.
-To do this, we need to add an ```import``` of the ```typing``` module
-that defines the *type constructors* ```List```:
 
-```python
-from game_element import GameElement
-from typing import List
-```
 
 We might first be inclined to write the search loop using list iterators:
 
@@ -675,7 +688,8 @@ that notification to the ```place_tile``` method:
 At this point, if we run the ```game_manager.py``` program, we can at least
 see an initial screen:
 
-![Initial screen](img/initial.png)
+![The initial screen should show two tiles](
+img/initial.png  "Initial game screen in graphical view")
 
 If you have not fixed the bug, you will
 likely see more tiles with value 4.
@@ -776,7 +790,9 @@ Looks good!  We call functions and methods like this *test scaffolding* by analo
 used in construction of buildings.  They are not part of the functionality of the project,
 but they are an important aid to building.
 
-![Public domain scaffolding image from Wikimedia Commons, by Tysto](https://upload.wikimedia.org/wikipedia/commons/8/80/Cincinnati-scaffolding.jpg)
+![Photograph shows temporary scaffolding attached to an apartment building](
+https://upload.wikimedia.org/wikipedia/commons/8/80/Cincinnati-scaffolding.jpg
+"Public domain scaffolding image from Wikimedia Commons, by Tysto")
 
 An important difference is that while
 construction scaffolding is removed when the building is complete, test scaffolding
@@ -823,12 +839,28 @@ class TestScaffolding(unittest.TestCase):
         self.assertEqual(as_list, again)
 ```
 
+One more check is useful:  Since we are using the invalid tile value 0
+to represent a cell that actually contains a `None` value, we want
+it is easy to slip up and create a `Tile` object with the
+invalid value.  (Guess how I know.)  Let's add a test case to guard against that. 
+
+```python
+    def test_no_bogus_tiles(self):
+        board = model.Board()
+        as_list = [[0, 2, 2, 4], [2, 0, 2, 8], [8, 2, 2, 4], [4, 2, 2, 0]]
+        board.from_list(as_list)
+        for row in board.tiles:
+            for cell in row:
+                assert cell is None or cell.value > 0
+```
+
+
 If it worked, we should get confirmation by running the test suite:
 
 ```text
 .....
 ----------------------------------------------------------------------
-Ran 5 tests in 0.001s
+Ran 7 tests in 0.001s
 
 OK
 ```
@@ -1059,7 +1091,7 @@ We'll also need an ```==``` operation for ```Tile``` objects, which we can
 create by writing an ```__eq__``` method:
 
 ```python
-    def __eq__(self, other: "Tile"):
+    def __eq__(self, other: "Tile") -> bool:
         return self.value == other.value
 ```
 
@@ -1198,7 +1230,7 @@ Our test suite is growing:
 ```text
 .............
 ----------------------------------------------------------------------
-Ran 13 tests in 0.002s
+Ran 16 tests in 0.002s
 
 OK
 ```
@@ -1222,12 +1254,18 @@ sliding them to the right (that is, with direction vector (0,1)).  If
 we start with the leftmost tile, at position (0,0), the result will not
 be correct.
 
-![Sliding right starting with leftmost tile](img/slide-first-first.png)
+![Diagram shows in sliding "[2 2 2 _]" right. Leftmost tile merges
+with second tile and gets stuck, then third moves, leaving
+"[_ 4 _ 2]"](
+img/slide-first-first.png "Sliding right starting with leftmost tile")
 
 This is not correct!  The correct result requires moving the last item
 in the row first, like this:
 
-![Sliding right starting with rightmost tile](img/slide-last-first.png)
+![Starting again with [2 2 2 _], we get [2 2 _2], 
+then [2 _ _ 4], then [_ _ 2 4]](
+img/slide-last-first.png "Sliding right starting with rightmost tile"
+)
 
 Whichever direction we are sliding the tiles, we should slide the *last* tile
 in the row or column first and work backward.   If we are sliding tiles in
@@ -1242,7 +1280,7 @@ it is natural to ask whether we can factor out the common parts.
 ### Game moves: Right, Left, Up, Down
 
 The provided ```game_manager.py``` already calls the ```right```, ```left```, ```up```,
-and ```down``` methods; you must write those methods.
+and ```down``` methods of `Board`.  You must write those methods.
 I suggest you start by writing separate ```left```, ```right```, ```up```,
  and ```down```
 methods.  Test to be sure these work correctly.  Only when you

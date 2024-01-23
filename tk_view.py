@@ -10,7 +10,7 @@ import graphics.graphics as graphics
 import time
 import game_element
 import model
-from typing import Tuple
+import commands
 
 ##########################
 # Configuration constants
@@ -46,9 +46,29 @@ RAMP = {2: '#fff5f0', 4: '#fff5f0',
 ANIMATION_STEPS = 3
 ANIMATION_TIME = 0.05
 
+
+# We can bind different areas of the keyboard to the
+# commands. "Left", "right", etc are Tk codes for the
+# arrow keys.  "jil," are a similar spatial pattern under
+# the right hand.
+KEY_BINDINGS = { # Arrow keys, as interpreted by Tk and graphics.py
+                 "Left": commands.LEFT, "Right": commands.RIGHT, "Up": commands.UP, "Down": commands.DOWN,
+                 # left-hand --- some people use this pattern?
+                 "a": commands.LEFT, "w": commands.UP, "s": commands.RIGHT, "z": commands.DOWN,
+                 # VI / Vim editor movement
+                 "h": commands.LEFT, "j": commands.DOWN, "k": commands.UP, "l": commands.RIGHT,
+                 # Numeric keypad (one common mapping)
+                 "4": commands.LEFT, "6": commands.RIGHT, "8": commands.UP, "2": commands.DOWN,
+                 # Ways to quit
+                 "Q": commands.CLOSE, "q": commands.CLOSE
+                 }
+
+
+
 #######
 # End configuration constants
 ######
+
 
 # Events we need to respond to:
 #   - A new tile has been created.  Draw it and listen to it.
@@ -74,9 +94,30 @@ class GameView(object):
         """
         return self.win.getKey()
 
+
+    def get_command(self) -> str:
+        """Get a command from the keyboard.  In the graphics interface,
+        this is a single keystroke.  We put it here in the view because
+        the input method depends on what kind of user interface we are
+        providing; textual input is different even if it is also from the
+        keyboard.
+        """
+        try:
+            key = self.get_key()
+            if key not in KEY_BINDINGS:
+                return commands.UNMAPPED
+            else:
+                return KEY_BINDINGS[key]
+        except graphics.graphics.GraphicsError as e:
+            # This happens when the close button is pressed.
+            if self.win.isClosed():
+                return commands.CLOSE
+            raise e
+
+
     def close(self):
         """Do this last; further interaction with the view
-        after 'close' is an arrow.
+        after 'close' is an error.
         """
         self.win.close()
 
@@ -105,11 +146,12 @@ class GridView(game_element.GameListener):
     within a GameView.
     """
 
-    def __init__(self, game: GameView, grid_size: int):
+    def __init__(self, game: GameView, grid: model.Board):
         """Square grid, with a little space
         around the tiles.
         Args:
            game: The surrounding GameView object
+           grid: The Board object where the Tile objects are
         """
         self.game = game
         self.win = game.win
@@ -117,15 +159,15 @@ class GridView(game_element.GameListener):
             graphics.Point(0, 0), graphics.Point(game.width, game.height))
         self.background.setFill("wheat")
         self.background.draw(self.win)
-        self.cell_width = (game.width - MARGIN) / grid_size
+        self.cell_width = (game.width - MARGIN) / max(1, len(grid.tiles[0]))
         self.tile_width = self.cell_width - MARGIN
-        self.cell_height = (game.height - MARGIN) / grid_size
+        self.cell_height = (game.height - MARGIN) / len(grid.tiles)
         self.tile_height = self.cell_height - MARGIN
         self.tiles = []
         # Initially empty tile spaces
-        for row in range(grid_size):
+        for row in range(len(grid.tiles)):
             row_tiles = []
-            for col in range(grid_size):
+            for col in range(len(grid.tiles[0])):
                 ul, lr = self.tile_corners(row, col)
                 tile_background = graphics.Rectangle(ul, lr)
                 tile_background.setFill("grey")
@@ -134,7 +176,7 @@ class GridView(game_element.GameListener):
                 row_tiles.append(tile_background)
             self.tiles.append(row_tiles)
 
-    def tile_corners(self, row: int, col: int) -> Tuple[graphics.Point, graphics.Point]:
+    def tile_corners(self, row: int, col: int) -> tuple[graphics.Point, graphics.Point]:
         """upper left and lower right corners of tile at row,col"""
         ul_x = MARGIN + col * self.cell_width
         lr_x = ul_x + self.tile_width
@@ -153,6 +195,13 @@ class GridView(game_element.GameListener):
             event.tile.add_listener(view)
         else:
             raise Exception("Unexpected event: {}".format(event))
+
+    def refresh(self):
+        """Ensure current state of board is visible.
+        For graphical view, depiction is incremental
+        and no additional refresh actions are required.
+        """
+        pass
 
 
 class TileView(object):
@@ -219,6 +268,44 @@ class TileView(object):
             self.background.undraw()
         else:
             raise Exception("Unexpected event {}".format(event))
+
+
+
+###
+# Controller component: Get input.  Placed in same module as the view
+# because view is tightly coupled to controller, that is, how we
+# get input depends on our output medium.  For example, we can only
+# read the mouse if we have a GUI. 
+#
+# Even if we have two views, we should have only one controller
+# reading from the keyboard.  (They could be compatible if one of
+# them was instead responding to buttons on screen, and the other
+# reading from the keyboard.)
+###
+
+
+class Command(object):
+    """Interpret keyboard input as commands from the
+    set LEFT, RIGHT, UP, DOWN, and UNMAPPED for a
+    key that does not have a binding.
+    """
+
+    def __init__(self, game_view):
+        self.game_view = game_view
+
+    def next(self):
+        try:
+            key = self.game_view.get_key()
+            if key not in KEY_BINDINGS:
+                return commands.UNMAPPED
+            else:
+                return KEY_BINDINGS[key]
+        except graphics.graphics.GraphicsError as e:
+            # This happens when the close button is pressed.
+            if self.game_view.win.isClosed():
+                return commands.CLOSE
+            raise e
+
 
 
 if __name__ == "__main__":
